@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GymControl Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--fire:#ff4500;--fire2:#ff8c00;--bg:#111;--surface:#161616;--surface2:#1a1a1a;--border:#222;--text:#f0f0f0;--muted:#555;--green:#06d6a0;--red:#ff5050;--purple:#9b5de5;}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh;}
+::-webkit-scrollbar{width:5px;} ::-webkit-scrollbar-track{background:#111;} ::-webkit-scrollbar-thumb{background:#333;border-radius:3px;}
+
+/* LAYOUT */
+.app{display:flex;min-height:100vh;}
+.sidebar{width:230px;min-height:100vh;background:#151515;border-right:1px solid var(--border);display:flex;flex-direction:column;padding-bottom:20px;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.main{margin-left:230px;flex:1;}
+
+/* BRAND */
+.brand{padding:26px 22px 0;display:flex;align-items:center;gap:11px;}
+.brand-icon{width:40px;height:40px;background:linear-gradient(135deg,#ff4500,#ff8c00);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.brand-name{font-family:'Bebas Neue',sans-serif;font-size:21px;letter-spacing:1px;line-height:1;}
+.brand-sub{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+
+/* SIDEBAR HERO IMAGE */
+.sb-hero{margin:18px 14px 0;border-radius:12px;overflow:hidden;position:relative;height:130px;}
+.sb-hero img{width:100%;height:100%;object-fit:cover;filter:brightness(0.5);}
+.sb-hero-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(255,69,0,0.55),transparent);display:flex;flex-direction:column;justify-content:flex-end;padding:12px;}
+.sb-hero-tag{font-size:9px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1.5px;}
+.sb-hero-title{font-family:'Bebas Neue',sans-serif;font-size:17px;color:#fff;letter-spacing:1px;}
+
+/* NAV */
+.nav-sec{padding:18px 16px 6px;font-size:10px;color:#3a3a3a;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;font-size:13.5px;font-weight:500;color:#666;transition:all 0.15s;border-radius:10px;margin:2px 8px;border-left:3px solid transparent;}
+.nav-item:hover{color:#ccc;background:rgba(255,255,255,0.04);}
+.nav-item.active{color:#fff;background:rgba(255,69,0,0.13);border-left-color:var(--fire);}
+.nav-item.active .ni{color:var(--fire);}
+.ni{font-size:15px;width:18px;text-align:center;}
+.sb-footer{margin-top:auto;padding:14px 18px;border-top:1px solid #1c1c1c;font-size:10px;color:#2e2e2e;}
+
+/* HERO PAGE */
+.hero{position:relative;height:340px;overflow:hidden;}
+.hero img{width:100%;height:100%;object-fit:cover;filter:brightness(0.3);}
+.hero-ov{position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,69,0,0.25),rgba(0,0,0,0.1));}
+.hero-content{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:44px 52px;}
+.hero-tag{font-size:11px;color:#ff8c00;text-transform:uppercase;letter-spacing:2px;font-weight:600;margin-bottom:10px;}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:62px;letter-spacing:2px;line-height:0.95;margin-bottom:14px;text-shadow:0 4px 20px rgba(0,0,0,0.5);}
+.hero-title span{color:var(--fire);}
+.hero-desc{font-size:14px;color:rgba(255,255,255,0.6);max-width:400px;line-height:1.7;margin-bottom:26px;}
+.hero-btns{display:flex;gap:10px;}
+.hero-stats{position:absolute;bottom:0;left:0;right:0;display:flex;background:rgba(0,0,0,0.65);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,0.06);}
+.hs{flex:1;padding:15px 20px;text-align:center;border-right:1px solid rgba(255,255,255,0.05);}
+.hs:last-child{border-right:none;}
+.hs-val{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--fire);}
+.hs-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:0.8px;}
+
+/* PAGE */
+.page{padding:34px 40px;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+.eyebrow{font-size:10px;color:var(--fire);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:3px;}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:20px 22px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.s1::before{background:linear-gradient(90deg,#ff4500,#ff8c00);}
+.s2::before{background:linear-gradient(90deg,#9b5de5,#c77dff);}
+.s3::before{background:linear-gradient(90deg,#ff5050,#ff8080);}
+.s4::before{background:linear-gradient(90deg,#06d6a0,#00f5d4);}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600;}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1;}
+.v-fire{color:#ff6030;} .v-purple{color:#9b5de5;} .v-red{color:#ff5050;} .v-green{color:#06d6a0;}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:13px;overflow:hidden;}
+.card-header{padding:16px 22px;border-bottom:1px solid #1e1e1e;display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:0.5px;}
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 18px;text-align:left;font-size:10px;font-weight:700;color:#3a3a3a;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #1c1c1c;}
+td{padding:13px 18px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.025);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+
+/* AVATAR */
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0;}
+.av-row{display:flex;align-items:center;gap:11px;}
+.td-name{font-weight:600;font-size:13.5px;}
+.td-sub{font-size:11px;color:#444;margin-top:1px;}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.5px;}
+.b-paid{background:rgba(6,214,160,0.1);color:#06d6a0;}
+.b-pend{background:rgba(255,80,80,0.1);color:#ff6060;}
+.b-act{background:rgba(255,100,30,0.1);color:#ff7030;}
+.b-inact{background:rgba(80,80,80,0.1);color:#555;}
+
+/* CUOTA BTN */
+.cuota-btn{width:108px;padding:6px 0;border-radius:20px;border:none;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:0.5px;transition:all 0.15s;font-family:'Outfit',sans-serif;}
+.cb-paid{background:rgba(6,214,160,0.12);color:#06d6a0;}
+.cb-paid:hover{background:rgba(6,214,160,0.22);}
+.cb-pend{background:rgba(255,80,80,0.1);color:#ff6060;}
+.cb-pend:hover{background:rgba(255,80,80,0.2);}
+
+/* BTNS */
+.btn{padding:9px 20px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:'Outfit',sans-serif;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-fire{background:linear-gradient(135deg,#ff4500,#ff8c00);color:#fff;box-shadow:0 4px 16px rgba(255,69,0,0.3);}
+.btn-fire:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,69,0,0.45);}
+.btn-ghost{background:transparent;color:#777;border:1px solid #2a2a2a;}
+.btn-ghost:hover{color:#ccc;border-color:#444;}
+.btn-danger{background:rgba(255,80,80,0.08);color:#ff5050;border:1px solid rgba(255,80,80,0.18);}
+.btn-danger:hover{background:rgba(255,80,80,0.18);}
+.btn-sm{padding:6px 13px;font-size:11px;}
+
+/* SEARCH */
+.search-wrap{position:relative;}
+.search-wrap input{background:#1a1a1a;border:1px solid #2a2a2a;color:var(--text);padding:9px 13px 9px 36px;border-radius:10px;font-size:13px;font-family:'Outfit',sans-serif;outline:none;width:220px;transition:border 0.15s;}
+.search-wrap input:focus{border-color:var(--fire);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+
+/* MES */
+.mes-sel{display:flex;align-items:center;gap:8px;}
+.mes-sel select{background:#1a1a1a;border:1px solid #2a2a2a;color:var(--text);padding:8px 11px;border-radius:10px;font-size:13px;font-family:'Outfit',sans-serif;outline:none;cursor:pointer;}
+.mes-sel select:focus{border-color:var(--fire);}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(6px);}
+.modal-box{background:#1a1a1a;border:1px solid #2e2e2e;border-radius:18px;padding:34px;width:450px;max-width:95vw;box-shadow:0 40px 80px rgba(0,0,0,0.6);}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.5px;margin-bottom:22px;}
+.fg{margin-bottom:14px;}
+.fl{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;}
+.fi{width:100%;background:#1e1e1e;border:1px solid #2a2a2a;color:var(--text);padding:10px 13px;border-radius:9px;font-size:13.5px;font-family:'Outfit',sans-serif;outline:none;transition:border 0.15s;}
+.fi:focus{border-color:var(--fire);}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:11px;}
+.modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:22px;}
+
+/* TOGGLE */
+.tog-wrap{display:flex;align-items:center;gap:10px;font-size:13px;color:#888;}
+.tog{width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;}
+.tog.on{background:linear-gradient(135deg,#ff4500,#ff8c00);}
+.tog.off{background:#252525;}
+.tog::after{content:'';position:absolute;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.4);}
+.tog.on::after{left:21px;} .tog.off::after{left:3px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:26px;right:26px;z-index:9999;padding:12px 22px;border-radius:11px;font-size:13px;font-weight:600;animation:toastIn 0.2s ease;}
+.t-ok{background:#0b1f16;border:1px solid #06d6a0;color:#06d6a0;}
+.t-err{background:#1f0b0b;border:1px solid #ff5050;color:#ff5050;}
+@keyframes toastIn{from{transform:translateY(10px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+/* LOADER */
+.loader{display:flex;align-items:center;justify-content:center;height:200px;color:var(--muted);font-size:14px;gap:10px;}
+.spin{width:20px;height:20px;border:2px solid #2a2a2a;border-top-color:var(--fire);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.empty{padding:48px;text-align:center;color:#3a3a3a;font-size:14px;}
+.features{padding:36px 52px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.feat{background:var(--surface);border:1px solid #1c1c1c;border-radius:13px;padding:26px;}
+.feat-icon{font-size:30px;margin-bottom:12px;}
+.feat-title{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:0.5px;margin-bottom:7px;}
+.feat-desc{font-size:13px;color:#555;line-height:1.6;}
+
+.bottom-nav{display:none;}
+@media(max-width:860px){
+  .sidebar{display:none;} .main{margin-left:0;padding-bottom:75px;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .hero-title{font-size:36px;} .hero-content{padding:28px 22px;} .hero-desc{display:none;}
+  .page{padding:16px;}
+  .features{grid-template-columns:1fr;padding:16px;}
+  .topbar{flex-direction:column;align-items:flex-start;gap:10px;}
+  .search-wrap input{width:100%!important;} .search-wrap{width:100%;}
+  th,td{padding:9px 10px;font-size:12px;}
+  .bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;
+    background:#151515;border-top:1px solid #222;z-index:200;
+    padding:8px 0 14px;
+  }
+  .bn-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    cursor:pointer;padding:4px 0;font-size:9px;color:#555;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.8px;transition:color 0.15s;
+  }
+  .bn-item.active{color:var(--fire);}
+  .bn-icon{font-size:22px;line-height:1;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">🏋️</div>
+      <div>
+        <div class="brand-name">GymControl</div>
+        <div class="brand-sub">Pro Suite</div>
+      </div>
+    </div>
+    <div class="sb-hero">
+      <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80" alt="gym"/>
+      <div class="sb-hero-ov">
+        <div class="sb-hero-tag">Tu gimnasio</div>
+        <div class="sb-hero-title">Power Gym</div>
+      </div>
+    </div>
+    <div class="nav-sec">Menú</div>
+    <div class="nav-item active" onclick="navTo('hero')"><span class="ni">⚡</span> Inicio</div>
+    <div class="nav-item" onclick="navTo('dashboard')"><span class="ni">◈</span> Panel</div>
+    <div class="nav-item" onclick="navTo('alumnos')"><span class="ni">◉</span> Socios</div>
+    <div class="nav-item" onclick="navTo('cuotas')"><span class="ni">◎</span> Cuotas</div>
+    <div class="sb-footer">v1.0 · GymControl Pro</div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main" id="main-content"></main>
+</div>
+
+<!-- MODAL ALUMNO -->
+<div class="modal-bg" id="modal-alumno" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-titulo">Nuevo socio</div>
+    <input type="hidden" id="edit-id"/>
+    <div class="fg">
+      <label class="fl">Nombre completo</label>
+      <input class="fi" id="f-nombre" placeholder="Ej: Juan Pérez"/>
+    </div>
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">Email</label>
+        <input class="fi" id="f-email" placeholder="juan@email.com"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Teléfono</label>
+        <input class="fi" id="f-tel" placeholder="11-1234-5678"/>
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">Plan</label>
+        <select class="fi" id="f-plan">
+          <option>Mensual</option>
+          <option>Trimestral</option>
+          <option>Semestral</option>
+          <option>Anual</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Monto ($)</label>
+        <input class="fi" type="number" id="f-monto" placeholder="8000"/>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="tog-wrap">
+        <button class="tog on" id="tog-activo" onclick="toggleActivo()"></button>
+        <span id="tog-label">Socio activo</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-fire" onclick="guardarAlumno()">Guardar socio</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR DELETE -->
+<div class="modal-bg" id="modal-del" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">¿Eliminar socio?</div>
+    <p style="color:#555;font-size:14px;line-height:1.6;margin-bottom:22px;">
+      Vas a eliminar a <strong id="del-nombre" style="color:#f0f0f0;"></strong>. Esta acción no se puede deshacer.
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('modal-del').style.display='none'">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarDelete()">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV MOBILE -->
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="bn-item active" onclick="navTo('hero')"><span class="bn-icon">⚡</span>Inicio</div>
+  <div class="bn-item" onclick="navTo('dashboard')"><span class="bn-icon">◈</span>Panel</div>
+  <div class="bn-item" onclick="navTo('alumnos')"><span class="bn-icon">👥</span>Socios</div>
+  <div class="bn-item" onclick="navTo('cuotas')"><span class="bn-icon">📅</span>Cuotas</div>
+</nav>
+<div id="toast" style="display:none;" class="toast"></div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAFRqCksgB6np7G2p8Atq-OuM9oOdFLVkQ",
+  authDomain: "gymcontrol-3d7a8.firebaseapp.com",
+  projectId: "gymcontrol-3d7a8",
+  storageBucket: "gymcontrol-3d7a8.firebasestorage.app",
+  messagingSenderId: "199340985853",
+  appId: "1:199340985853:web:427d441031bf6dadb2dd94"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const alumnosCol = collection(db, "alumnos");
+
+// ── STATE ──
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+let alumnos = [];
+let vistaActual = "hero";
+let mesVista = new Date().getMonth();
+let añoVista = new Date().getFullYear();
+let busqueda = "";
+let activoForm = true;
+let pendingDeleteId = null;
+
+function clavesMes(){ return `${añoVista}-${mesVista}`; }
+
+// ── AVATAR COLORS ──
+const COLORS = ["#FF6B35","#F7931E","#FFD23F","#06D6A0","#118AB2","#9B5DE5","#F15BB5","#00BBF9"];
+function avatarColor(n){ return COLORS[n.charCodeAt(0)%COLORS.length]; }
+
+// ── TOAST ──
+function toast(msg, tipo="ok"){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = `toast ${tipo==="ok"?"t-ok":"t-err"}`;
+  el.style.display = "block";
+  setTimeout(()=>el.style.display="none", 2600);
+}
+
+// ── FIREBASE LISTENER (tiempo real) ──
+onSnapshot(alumnosCol, snap => {
+  alumnos = snap.docs.map(d => ({id: d.id, ...d.data()}));
+  render();
+});
+
+// ── NAV ──
+window.navTo = function(v){
+  vistaActual = v;
+  document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+  const items = document.querySelectorAll(".nav-item");
+  const order = ["hero","dashboard","alumnos","cuotas"];
+  const idx = order.indexOf(v);
+  if(items[idx]) items[idx].classList.add("active");
+  // update bottom nav
+  document.querySelectorAll(".bn-item").forEach((el,i) => {
+    el.classList.toggle("active", i === idx);
+  });
+  render();
+  window.scrollTo(0,0);
+}
+
+// ── RENDER ──
+function render(){
+  const main = document.getElementById("main-content");
+  if(vistaActual === "hero")      main.innerHTML = renderHero();
+  if(vistaActual === "dashboard") main.innerHTML = renderDashboard();
+  if(vistaActual === "alumnos")   main.innerHTML = renderAlumnos();
+  if(vistaActual === "cuotas")    main.innerHTML = renderCuotas();
+}
+
+// ── HERO ──
+function renderHero(){
+  const activos = alumnos.filter(a=>a.activo).length;
+  const ck = clavesMes();
+  const pagados = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]).length;
+  const recaud = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]).reduce((s,a)=>s+Number(a.monto||0),0);
+  const pend = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck])).length;
+  return `
+  <div class="hero">
+    <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1400&q=80" alt="gym"/>
+    <div class="hero-ov"></div>
+    <div class="hero-content">
+      <div class="hero-tag">🔥 Sistema de gestión · Power Gym</div>
+      <div class="hero-title">CONTROL<br/><span>TOTAL</span><br/>DE SOCIOS</div>
+      <div class="hero-desc">Gestioná tus afiliados, controlá el cobro de cuotas mes a mes y llevá un registro claro de tu negocio.</div>
+      <div class="hero-btns">
+        <button class="btn btn-fire" onclick="navTo('dashboard')">Ver panel →</button>
+        <button class="btn btn-ghost" onclick="navTo('alumnos')">Gestionar socios</button>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="hs"><div class="hs-val">${activos}</div><div class="hs-label">Socios activos</div></div>
+      <div class="hs"><div class="hs-val">${pagados}</div><div class="hs-label">Pagaron este mes</div></div>
+      <div class="hs"><div class="hs-val">$${recaud.toLocaleString("es-AR")}</div><div class="hs-label">Recaudado</div></div>
+      <div class="hs"><div class="hs-val">${pend}</div><div class="hs-label">Pendientes</div></div>
+    </div>
+  </div>
+  <div class="features">
+    <div class="feat"><div class="feat-icon">👥</div><div class="feat-title">Alta de socios</div><div class="feat-desc">Registrá nuevos afiliados con todos sus datos, plan y monto de cuota.</div></div>
+    <div class="feat"><div class="feat-icon">📅</div><div class="feat-title">Control mensual</div><div class="feat-desc">Marcá cuotas como pagas mes a mes con un solo clic. Se sincroniza en tiempo real.</div></div>
+    <div class="feat"><div class="feat-icon">📊</div><div class="feat-title">Estadísticas</div><div class="feat-desc">Visualizá cuánto recaudaste y quién está pendiente en tiempo real desde cualquier dispositivo.</div></div>
+  </div>`;
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const ck = clavesMes();
+  const activos = alumnos.filter(a=>a.activo).length;
+  const pagados = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]).length;
+  const pend = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck])).length;
+  const recaud = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]).reduce((s,a)=>s+Number(a.monto||0),0);
+  const pendList = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck]));
+
+  const mesOpts = MESES.map((m,i)=>`<option value="${i}" ${i===mesVista?"selected":""}>${m}</option>`).join("");
+  const añoOpts = [2024,2025,2026].map(y=>`<option ${y===añoVista?"selected":""}>${y}</option>`).join("");
+
+  const rows = pendList.length ? pendList.map(a=>`
+    <tr>
+      <td><div class="av-row"><div class="avatar" style="background:${avatarColor(a.nombre)}">${a.nombre[0]}</div>
+        <div><div class="td-name">${a.nombre}</div><div class="td-sub">${a.email||""}</div></div></div></td>
+      <td style="color:#888">${a.plan||""}</td>
+      <td style="font-weight:600">$${Number(a.monto||0).toLocaleString("es-AR")}</td>
+      <td><span class="badge b-pend">● PENDIENTE</span></td>
+      <td><button class="btn btn-fire btn-sm" onclick="toggleCuota('${a.id}')">Marcar pagado</button></td>
+    </tr>`).join("") : `<tr><td colspan="5" class="empty">✅ Todos los socios pagaron este mes</td></tr>`;
+
+  return `<div class="page">
+    <div class="topbar">
+      <div><div class="eyebrow">Resumen general</div><div class="page-title">Panel</div></div>
+      <div class="mes-sel">
+        <select onchange="cambiarMes(this.value)">${mesOpts}</select>
+        <select onchange="cambiarAño(this.value)">${añoOpts}</select>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card s1"><div class="stat-label">Socios activos</div><div class="stat-value v-fire">${activos}</div></div>
+      <div class="stat-card s2"><div class="stat-label">Pagaron — ${MESES[mesVista]}</div><div class="stat-value v-purple">${pagados}</div></div>
+      <div class="stat-card s3"><div class="stat-label">Pendientes — ${MESES[mesVista]}</div><div class="stat-value v-red">${pend}</div></div>
+      <div class="stat-card s4"><div class="stat-label">Recaudado — ${MESES[mesVista]}</div><div class="stat-value v-green">$${recaud.toLocaleString("es-AR")}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Pendientes de pago — ${MESES[mesVista]} ${añoVista}</div></div>
+      <table><thead><tr><th>Socio</th><th>Plan</th><th>Monto</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
+// ── ALUMNOS ──
+function renderAlumnos(){
+  const filtrados = alumnos.filter(a=>
+    a.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
+    (a.email||"").toLowerCase().includes(busqueda.toLowerCase())
+  );
+  const rows = filtrados.length ? filtrados.map(a=>`
+    <tr>
+      <td><div class="av-row"><div class="avatar" style="background:${avatarColor(a.nombre)}">${a.nombre[0]}</div>
+        <div><div class="td-name">${a.nombre}</div><div class="td-sub">${a.email||""}</div></div></div></td>
+      <td style="color:#666">${a.telefono||""}</td>
+      <td style="color:#888">${a.plan||""}</td>
+      <td style="font-weight:600">$${Number(a.monto||0).toLocaleString("es-AR")}</td>
+      <td><span class="badge ${a.activo?"b-act":"b-inact"}">${a.activo?"● Activo":"○ Inactivo"}</span></td>
+      <td style="color:#444;font-size:12px">${a.fechaAlta||""}</td>
+      <td><div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="abrirEditar('${a.id}')">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="abrirDelete('${a.id}','${a.nombre}')">✕</button>
+      </div></td>
+    </tr>`).join("") : `<tr><td colspan="7" class="empty">No se encontraron socios</td></tr>`;
+
+  return `<div class="page">
+    <div class="topbar">
+      <div><div class="eyebrow">Gestión</div><div class="page-title">Socios</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input placeholder="Buscar socio..." value="${busqueda}" oninput="filtrar(this.value)"/>
+        </div>
+        <button class="btn btn-fire" onclick="abrirNuevo()">+ Nuevo socio</button>
+      </div>
+    </div>
+    <div class="card">
+      <table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Plan</th><th>Monto</th><th>Estado</th><th>Alta</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
+// ── CUOTAS ──
+function renderCuotas(){
+  const ck = clavesMes();
+  const activos = alumnos.filter(a=>a.activo);
+  const mesOpts = MESES.map((m,i)=>`<option value="${i}" ${i===mesVista?"selected":""}>${m}</option>`).join("");
+  const añoOpts = [2024,2025,2026].map(y=>`<option ${y===añoVista?"selected":""}>${y}</option>`).join("");
+
+  const rows = activos.length ? activos.map(a=>{
+    const pagado = !!(a.cuotas&&a.cuotas[ck]);
+    return `<tr>
+      <td><div class="av-row"><div class="avatar" style="background:${avatarColor(a.nombre)}">${a.nombre[0]}</div>
+        <div><div class="td-name">${a.nombre}</div><div class="td-sub">${a.email||""}</div></div></div></td>
+      <td style="color:#888">${a.plan||""}</td>
+      <td style="font-weight:600">$${Number(a.monto||0).toLocaleString("es-AR")}</td>
+      <td><span class="badge ${pagado?"b-paid":"b-pend"}">${pagado?"✓ PAGADO":"● PENDIENTE"}</span></td>
+      <td><button class="cuota-btn ${pagado?"cb-paid":"cb-pend"}" onclick="toggleCuota('${a.id}')">${pagado?"✓ PAGADO":"PENDIENTE"}</button></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="5" class="empty">No hay socios activos</td></tr>`;
+
+  return `<div class="page">
+    <div class="topbar">
+      <div><div class="eyebrow">Control mensual</div><div class="page-title">Cuotas — ${MESES[mesVista]} ${añoVista}</div></div>
+      <div class="mes-sel">
+        <select onchange="cambiarMes(this.value)">${mesOpts}</select>
+        <select onchange="cambiarAño(this.value)">${añoOpts}</select>
+      </div>
+    </div>
+    <div class="card">
+      <table><thead><tr><th>Socio</th><th>Plan</th><th>Monto</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>
+  </div>`;
+}
+
+// ── ACCIONES GLOBALES ──
+window.cambiarMes = v => { mesVista=Number(v); render(); }
+window.cambiarAño = v => { añoVista=Number(v); render(); }
+window.filtrar    = v => { busqueda=v; render(); }
+
+window.toggleCuota = async function(id){
+  const a = alumnos.find(x=>x.id===id);
+  if(!a) return;
+  const ck = clavesMes();
+  const cuotas = {...(a.cuotas||{})};
+  cuotas[ck] = !cuotas[ck];
+  await updateDoc(doc(db,"alumnos",id), {cuotas});
+  toast(cuotas[ck] ? "✓ Cuota registrada como pagada" : "Cuota marcada como pendiente");
+}
+
+window.abrirNuevo = function(){
+  document.getElementById("modal-titulo").textContent = "Nuevo socio";
+  document.getElementById("edit-id").value = "";
+  document.getElementById("f-nombre").value = "";
+  document.getElementById("f-email").value = "";
+  document.getElementById("f-tel").value = "";
+  document.getElementById("f-plan").value = "Mensual";
+  document.getElementById("f-monto").value = "";
+  activoForm = true;
+  actualizarToggle();
+  document.getElementById("modal-alumno").style.display = "flex";
+}
+
+window.abrirEditar = function(id){
+  const a = alumnos.find(x=>x.id===id);
+  if(!a) return;
+  document.getElementById("modal-titulo").textContent = "Editar socio";
+  document.getElementById("edit-id").value = id;
+  document.getElementById("f-nombre").value = a.nombre||"";
+  document.getElementById("f-email").value = a.email||"";
+  document.getElementById("f-tel").value = a.telefono||"";
+  document.getElementById("f-plan").value = a.plan||"Mensual";
+  document.getElementById("f-monto").value = a.monto||"";
+  activoForm = !!a.activo;
+  actualizarToggle();
+  document.getElementById("modal-alumno").style.display = "flex";
+}
+
+window.cerrarModal = function(){
+  document.getElementById("modal-alumno").style.display = "none";
+}
+
+window.toggleActivo = function(){
+  activoForm = !activoForm;
+  actualizarToggle();
+}
+
+function actualizarToggle(){
+  const tog = document.getElementById("tog-activo");
+  const lbl = document.getElementById("tog-label");
+  tog.className = `tog ${activoForm?"on":"off"}`;
+  lbl.textContent = activoForm ? "Socio activo" : "Socio inactivo";
+  lbl.style.color = activoForm ? "#ff6030" : "#555";
+}
+
+window.guardarAlumno = async function(){
+  const nombre = document.getElementById("f-nombre").value.trim();
+  const monto  = document.getElementById("f-monto").value;
+  if(!nombre || !monto) return toast("Completá nombre y monto","err");
+
+  const data = {
+    nombre,
+    email:    document.getElementById("f-email").value.trim(),
+    telefono: document.getElementById("f-tel").value.trim(),
+    plan:     document.getElementById("f-plan").value,
+    monto:    Number(monto),
+    activo:   activoForm,
+  };
+
+  const editId = document.getElementById("edit-id").value;
+  if(editId){
+    await updateDoc(doc(db,"alumnos",editId), data);
+    toast("Socio actualizado ✓");
+  } else {
+    data.fechaAlta = new Date().toISOString().slice(0,10);
+    data.cuotas = {};
+    await addDoc(alumnosCol, data);
+    toast("Socio agregado ✓");
+  }
+  cerrarModal();
+}
+
+window.abrirDelete = function(id, nombre){
+  pendingDeleteId = id;
+  document.getElementById("del-nombre").textContent = nombre;
+  document.getElementById("modal-del").style.display = "flex";
+}
+
+window.confirmarDelete = async function(){
+  if(!pendingDeleteId) return;
+  await deleteDoc(doc(db,"alumnos",pendingDeleteId));
+  document.getElementById("modal-del").style.display = "none";
+  pendingDeleteId = null;
+  toast("Socio eliminado","err");
+}
+
+// ── INIT ──
+render();
+</script>
+</body>
+</html>
