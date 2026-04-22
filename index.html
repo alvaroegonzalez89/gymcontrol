@@ -284,6 +284,60 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   <div class="bn-item" onclick="navTo('alumnos')"><span class="bn-icon">👥</span>Socios</div>
   <div class="bn-item" onclick="navTo('cuotas')"><span class="bn-icon">📅</span>Cuotas</div>
 </nav>
+<!-- MODAL COMPROBANTE -->
+<div class="modal-bg" id="modal-comprobante" style="display:none;">
+  <div class="modal-box" style="width:400px;padding:0;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#ff4500,#ff8c00);padding:24px;text-align:center;">
+      <div style="font-size:36px;margin-bottom:6px;">✅</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#fff;">PAGO REGISTRADO</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.75);margin-top:3px;letter-spacing:1px;">COMPROBANTE OFICIAL</div>
+    </div>
+    <div style="padding:24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #2a2a2a;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;background:linear-gradient(135deg,#ff4500,#ff8c00);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">🏋️</div>
+          <div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:0.5px;">Power Gym</div>
+            <div style="font-size:10px;color:#555;">Sistema de Gestión</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:10px;color:#555;text-transform:uppercase;letter-spacing:0.8px;">Comprobante</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#ff6030;">#<span id="comp-nro"></span></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#555;">👤 Socio</span>
+          <span style="font-size:13px;font-weight:700;" id="comp-nombre"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#555;">📋 Plan</span>
+          <span style="font-size:13px;" id="comp-plan"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:12px;color:#555;">📅 Período</span>
+          <span style="font-size:13px;" id="comp-mes"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(6,214,160,0.08);border-radius:10px;border:1px solid rgba(6,214,160,0.2);">
+          <span style="font-size:12px;color:#06d6a0;font-weight:700;">💰 Monto abonado</span>
+          <span style="font-size:18px;font-weight:800;color:#06d6a0;font-family:'Bebas Neue',sans-serif;" id="comp-monto"></span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:10px 14px;background:#1e1e1e;border-radius:8px;margin-bottom:20px;">
+        <span style="font-size:11px;color:#555;">📆 <span id="comp-fecha"></span></span>
+        <span style="font-size:11px;color:#555;">🕐 <span id="comp-hora"></span></span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <button id="comp-wa-btn" class="btn btn-fire" style="width:100%;justify-content:center;gap:8px;" onclick="enviarWhatsApp()">
+          <span style="font-size:16px;">📲</span> Enviar por WhatsApp
+        </button>
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;" onclick="cerrarComprobante()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast" style="display:none;" class="toast"></div>
 
 <!-- FIREBASE -->
@@ -521,9 +575,76 @@ window.toggleCuota = async function(id){
   if(!a) return;
   const ck = clavesMes();
   const cuotas = {...(a.cuotas||{})};
+  const estabaPagado = !!cuotas[ck];
   cuotas[ck] = !cuotas[ck];
   await updateDoc(doc(db,"alumnos",id), {cuotas});
-  toast(cuotas[ck] ? "✓ Cuota registrada como pagada" : "Cuota marcada como pendiente");
+  if(cuotas[ck]){
+    // Acaba de marcarse como pagado → mostrar comprobante
+    mostrarComprobante(a);
+  } else {
+    toast("Cuota marcada como pendiente");
+  }
+}
+
+window.mostrarComprobante = function(a){
+  const ahora = new Date();
+  const fecha = ahora.toLocaleDateString("es-AR", {day:"2-digit", month:"2-digit", year:"numeric"});
+  const hora  = ahora.toLocaleTimeString("es-AR", {hour:"2-digit", minute:"2-digit"});
+  const mes   = MESES[mesVista];
+  const año   = añoVista;
+  const monto = Number(a.monto||0).toLocaleString("es-AR");
+  const nroComp = Math.floor(Math.random()*90000)+10000;
+
+  // Guardar datos para usar en envío WA
+  window._comprobante = { a, fecha, hora, mes, año, monto, nroComp };
+
+  document.getElementById("comp-nro").textContent    = nroComp;
+  document.getElementById("comp-nombre").textContent = a.nombre;
+  document.getElementById("comp-plan").textContent   = a.plan||"Mensual";
+  document.getElementById("comp-mes").textContent    = `${mes} ${año}`;
+  document.getElementById("comp-monto").textContent  = `$${monto}`;
+  document.getElementById("comp-fecha").textContent  = fecha;
+  document.getElementById("comp-hora").textContent   = hora;
+
+  // Mostrar u ocultar botón WhatsApp según si tiene teléfono
+  const tel = (a.telefono||"").replace(/\D/g,"");
+  const btnWA = document.getElementById("comp-wa-btn");
+  if(tel){
+    btnWA.style.display = "flex";
+  } else {
+    btnWA.style.display = "none";
+  }
+
+  document.getElementById("modal-comprobante").style.display = "flex";
+}
+
+window.enviarWhatsApp = function(){
+  const c = window._comprobante;
+  if(!c) return;
+  const tel = (c.a.telefono||"").replace(/\D/g,"");
+  // Agregar código de Argentina si no tiene prefijo internacional
+  const telFull = tel.startsWith("54") ? tel : `54${tel}`;
+  const msg = encodeURIComponent(
+`✅ *COMPROBANTE DE PAGO*
+━━━━━━━━━━━━━━━━━━
+🏋️ *Power Gym*
+N° Comprobante: #${c.nroComp}
+━━━━━━━━━━━━━━━━━━
+👤 Socio: ${c.a.nombre}
+📋 Plan: ${c.a.plan||"Mensual"}
+📅 Período: ${c.mes} ${c.año}
+💰 Monto abonado: $${c.monto}
+━━━━━━━━━━━━━━━━━━
+📆 Fecha: ${c.fecha}
+🕐 Hora: ${c.hora}
+━━━━━━━━━━━━━━━━━━
+¡Gracias por tu pago! 💪`
+  );
+  window.open(`https://wa.me/${telFull}?text=${msg}`, "_blank");
+}
+
+window.cerrarComprobante = function(){
+  document.getElementById("modal-comprobante").style.display = "none";
 }
 
 window.abrirNuevo = function(){
