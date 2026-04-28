@@ -528,7 +528,7 @@ function renderAlumnos(){
       </div>
     </div>
     <div class="card">
-      <table><thead><tr><th>Nombre</th><th>Teléfono</th><th>Plan</th><th>Monto</th><th>Estado</th><th>Alta</th><th></th></tr></thead>
+      <table id="tabla-alumnos"><thead><tr><th>Nombre</th><th>Teléfono</th><th>Plan</th><th>Monto</th><th>Estado</th><th>Alta</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table>
     </div>
   </div>`;
@@ -606,9 +606,34 @@ function renderConfig(){
 }
 
 // ── ACCIONES ──
+// ── SEARCH FIX — no re-renderiza, solo filtra la tabla ──
+window.filtrar = function(v){
+  busqueda = v;
+  // Solo actualizar las filas de la tabla, no toda la página
+  const tbody = document.querySelector("#tabla-alumnos tbody");
+  if(!tbody) return;
+  const filtrados = alumnos.filter(a=>
+    a.nombre?.toLowerCase().includes(busqueda.toLowerCase())||
+    (a.email||"").toLowerCase().includes(busqueda.toLowerCase())
+  );
+  tbody.innerHTML = filtrados.length ? filtrados.map(a=>`
+    <tr>
+      <td><div class="av-row"><div class="avatar" style="background:${avatarColor(a.nombre)}">${a.nombre[0]}</div>
+        <div><div class="td-name">${a.nombre}</div><div class="td-sub">${a.email||""}</div></div></div></td>
+      <td style="color:#666">${a.telefono||""}</td>
+      <td style="color:#888">${a.plan||""}</td>
+      <td style="font-weight:600">$${Number(a.monto||0).toLocaleString("es-AR")}</td>
+      <td><span class="badge ${a.activo?"b-act":"b-inact"}">${a.activo?"● Activo":"○ Inactivo"}</span></td>
+      <td style="color:#444;font-size:12px">${a.fechaAlta||""}</td>
+      <td><div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="abrirEditar('${a.id}')">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="abrirDelete('${a.id}','${a.nombre}')">✕</button>
+      </div></td>
+    </tr>`).join("") : `<tr><td colspan="7" class="empty">No se encontraron socios</td></tr>`;
+}
+
 window.cambiarMes = v => { mesVista=Number(v); render(); }
 window.cambiarAño = v => { añoVista=Number(v); render(); }
-window.filtrar    = v => { busqueda=v; render(); }
 
 window.toggleCuota = async function(id){
   const a = alumnos.find(x=>x.id===id);
