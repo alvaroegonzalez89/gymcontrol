@@ -418,9 +418,9 @@ function render(){
 function renderHero(){
   const ck = clavesMes();
   const activos = alumnos.filter(a=>a.activo).length;
-  const pagados = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]).length;
-  const recaud  = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]).reduce((s,a)=>s+Number(a.monto||0),0);
-  const pend    = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck])).length;
+  const pagados = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]&&a.cuotas[ck].pagado).length;
+  const recaud  = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]&&a.cuotas[ck].pagado).reduce((s,a)=>s+Number(a.cuotas[ck].monto||0),0);
+  const pend    = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck]&&a.cuotas[ck].pagado)).length;
   return `
   <div class="hero">
     <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1400&q=80" alt="gym"/>
@@ -452,10 +452,10 @@ function renderHero(){
 function renderDashboard(){
   const ck = clavesMes();
   const activos = alumnos.filter(a=>a.activo).length;
-  const pagados = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]).length;
-  const pend    = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck])).length;
-  const recaud  = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]).reduce((s,a)=>s+Number(a.monto||0),0);
-  const pendList= alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck]));
+  const pagados = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]&&a.cuotas[ck].pagado).length;
+  const pend    = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck]&&a.cuotas[ck].pagado)).length;
+  const recaud  = alumnos.filter(a=>a.cuotas&&a.cuotas[ck]&&a.cuotas[ck].pagado).reduce((s,a)=>s+Number(a.cuotas[ck].monto||0),0);
+  const pendList= alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck]&&a.cuotas[ck].pagado));
   const mesOpts = MESES.map((m,i)=>`<option value="${i}" ${i===mesVista?"selected":""}>${m}</option>`).join("");
   const añoOpts = [2024,2025,2026].map(y=>`<option ${y===añoVista?"selected":""}>${y}</option>`).join("");
 
@@ -540,18 +540,32 @@ function renderCuotas(){
   const activos = alumnos.filter(a=>a.activo);
   const mesOpts = MESES.map((m,i)=>`<option value="${i}" ${i===mesVista?"selected":""}>${m}</option>`).join("");
   const añoOpts = [2024,2025,2026].map(y=>`<option ${y===añoVista?"selected":""}>${y}</option>`).join("");
+  const esMesActual = mesVista === new Date().getMonth() && añoVista === new Date().getFullYear();
   const rows = activos.length ? activos.map(a=>{
-    const pagado=!!(a.cuotas&&a.cuotas[ck]);
+    const pago = a.cuotas&&a.cuotas[ck];
+    const pagado = !!(pago&&pago.pagado);
+    const montoMostrar = pagado ? Number(pago.monto||0).toLocaleString("es-AR") : Number(a.monto||0).toLocaleString("es-AR");
+    const fechaPago = pagado && pago.fecha ? `<div style="font-size:10px;color:#444;margin-top:3px;">📆 ${pago.fecha} ${pago.hora||""}</div>` : "";
+    // Botón: si está pagado y es mes pasado → candado. Si mes actual → puede revertir
+    let accionBtn = "";
+    if(pagado){
+      if(esMesActual){
+        accionBtn = `<button class="cuota-btn cb-paid" onclick="toggleCuota('${a.id}')">✓ PAGADO</button>`;
+      } else {
+        accionBtn = `<span style="font-size:18px;opacity:0.4;" title="Pago bloqueado — mes cerrado">🔒</span>`;
+      }
+    } else {
+      accionBtn = `
+        <button class="cuota-btn cb-pend" onclick="toggleCuota('${a.id}')">PENDIENTE</button>
+        <button class="btn btn-transfer btn-sm" onclick="abrirTransferencia('${a.id}')">🏦</button>`;
+    }
     return `<tr>
       <td><div class="av-row"><div class="avatar" style="background:${avatarColor(a.nombre)}">${a.nombre[0]}</div>
         <div><div class="td-name">${a.nombre}</div><div class="td-sub">${a.email||""}</div></div></div></td>
       <td style="color:#888">${a.plan||""}</td>
-      <td style="font-weight:600">$${Number(a.monto||0).toLocaleString("es-AR")}</td>
+      <td style="font-weight:600">$${montoMostrar}${fechaPago}</td>
       <td><span class="badge ${pagado?"b-paid":"b-pend"}">${pagado?"✓ PAGADO":"● PENDIENTE"}</span></td>
-      <td><div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="cuota-btn ${pagado?"cb-paid":"cb-pend"}" onclick="toggleCuota('${a.id}')">${pagado?"✓ PAGADO":"PENDIENTE"}</button>
-        ${!pagado?`<button class="btn btn-transfer btn-sm" onclick="abrirTransferencia('${a.id}')">🏦</button>`:""}
-      </div></td>
+      <td><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">${accionBtn}</div></td>
     </tr>`;
   }).join("") : `<tr><td colspan="5" class="empty">No hay socios activos</td></tr>`;
 
@@ -640,17 +654,38 @@ window.toggleCuota = async function(id){
   if(!a) return;
   const ck = clavesMes();
   const cuotas = {...(a.cuotas||{})};
-  cuotas[ck] = !cuotas[ck];
+  const pago = cuotas[ck];
+  const esMesActual = mesVista === new Date().getMonth() && añoVista === new Date().getFullYear();
+
+  if(pago && pago.pagado){
+    // Ya está pagado — solo permitir deshacer si es el mes actual
+    if(!esMesActual){
+      toast("No podés modificar pagos de meses anteriores", "err");
+      return;
+    }
+    // Deshacer pago del mes actual
+    cuotas[ck] = null;
+    await updateDoc(doc(db,"alumnos",id), {cuotas});
+    toast("Pago del mes actual revertido");
+    return;
+  }
+
+  // Marcar como pagado — guardar monto real del momento
+  const ahora = new Date();
+  cuotas[ck] = {
+    pagado: true,
+    monto: Number(a.monto||0),
+    fecha: ahora.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"}),
+    hora:  ahora.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})
+  };
   await updateDoc(doc(db,"alumnos",id), {cuotas});
-  if(cuotas[ck]) mostrarComprobante(a);
-  else toast("Cuota marcada como pendiente");
+  mostrarComprobante(a, cuotas[ck]);
 }
 
-window.mostrarComprobante = function(a){
-  const ahora = new Date();
-  const fecha = ahora.toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"});
-  const hora  = ahora.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
-  const monto = Number(a.monto||0).toLocaleString("es-AR");
+window.mostrarComprobante = function(a, pago){
+  const monto = Number(pago?.monto || a.monto||0).toLocaleString("es-AR");
+  const fecha = pago?.fecha || new Date().toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"});
+  const hora  = pago?.hora  || new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
   const nroComp = Math.floor(Math.random()*90000)+10000;
   _comprobante = {a, fecha, hora, mes:MESES[mesVista], año:añoVista, monto, nroComp};
   document.getElementById("comp-gimnombre").textContent = gymConfig.nombre;
@@ -736,8 +771,8 @@ Una vez realizada la transferencia, te enviamos tu comprobante. ¡Gracias! 💪`
 // ── RECORDATORIOS ──
 window.iniciarRecordatorios = function(){
   const ck = clavesMes();
-  _pendientesLista = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck])&&(a.telefono||"").replace(/\D/g,"").length>=8);
-  const sinTel = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck])&&(a.telefono||"").replace(/\D/g,"").length<8);
+  _pendientesLista = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck]&&a.cuotas[ck].pagado)&&(a.telefono||"").replace(/\D/g,"").length>=8);
+  const sinTel = alumnos.filter(a=>a.activo&&!(a.cuotas&&a.cuotas[ck]&&a.cuotas[ck].pagado)&&(a.telefono||"").replace(/\D/g,"").length<8);
   if(!_pendientesLista.length){ toast("No hay pendientes con teléfono cargado","err"); return; }
   _recIdx = 0;
   document.getElementById("rec-total").textContent = _pendientesLista.length;
